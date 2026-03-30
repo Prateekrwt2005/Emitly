@@ -4,7 +4,14 @@ import UsersLoadingSkeleton from "./UsersLoadingSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 
 function ContactList() {
-  const { getAllContacts, allContacts, setSelectedUser, isUsersLoading } = useChatStore();
+  const {
+    getAllContacts,
+    allContacts,
+    setSelectedUser,
+    isUsersLoading,
+    selectedUser,
+  } = useChatStore();
+
   const { onlineUsers } = useAuthStore();
 
   useEffect(() => {
@@ -14,24 +21,50 @@ function ContactList() {
   if (isUsersLoading) return <UsersLoadingSkeleton />;
 
   return (
-    <>
-      {allContacts.map((contact) => (
-        <div
-          key={contact._id}
-          className="bg-cyan-500/10 p-4 rounded-lg cursor-pointer hover:bg-cyan-500/20 transition-colors"
-          onClick={() => setSelectedUser(contact)}
-        >
-          <div className="flex items-center gap-3">
-            <div className={`avatar ${onlineUsers.includes(contact._id) ? "online" : "offline"}`}>
-              <div className="size-12 rounded-full">
-                <img src={contact.profilePic || "/avatar.png"} />
-              </div>
+    <div className="space-y-2">
+      {allContacts.map((contact) => {
+        const isActive = selectedUser?._id === contact._id;
+        const isOnline = onlineUsers.includes(contact._id);
+
+        return (
+          <div
+            key={contact._id}
+            onClick={() => setSelectedUser(contact)}
+            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all
+            ${
+              isActive
+                ? "bg-cyan-500/10 border border-cyan-500/30 shadow-[0_0_10px_rgba(34,211,238,0.2)]"
+                : "hover:bg-white/5"
+            }`}
+          >
+            {/* AVATAR */}
+            <div className="relative">
+              <img
+                src={contact.profilePic || "/avatar.png"}
+                alt={contact.fullName}
+                className="w-11 h-11 rounded-full object-cover"
+              />
+
+              {/* ONLINE DOT */}
+              {isOnline && (
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-black"></span>
+              )}
             </div>
-            <h4 className="text-slate-200 font-medium">{contact.fullName}</h4>
+
+            {/* NAME */}
+            <div className="flex-1 min-w-0">
+              <p className="text-slate-200 text-sm font-medium truncate">
+                {contact.fullName}
+              </p>
+              <p className="text-xs text-slate-400">
+                {isOnline ? "Online" : "Offline"}
+              </p>
+            </div>
           </div>
-        </div>
-      ))}
-    </>
+        );
+      })}
+    </div>
   );
 }
+
 export default ContactList;

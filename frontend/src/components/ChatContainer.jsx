@@ -6,6 +6,7 @@ import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 import MessageInput from "./MessageInput";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
 
+// ✅ Tick Icons (UNCHANGED)
 const Tick = ({ color = "#9CA3AF" }) => (
   <svg
     width="12"
@@ -46,6 +47,7 @@ function ChatContainer() {
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
+  // 🔥 FETCH + SOCKET SUBSCRIBE
   useEffect(() => {
     getMessagesByUserId(selectedUser._id);
     subscribeToMessages();
@@ -53,11 +55,15 @@ function ChatContainer() {
     return () => unsubscribeFromMessages();
   }, [selectedUser]);
 
+  // 🔥 AUTO SCROLL
   useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+   messageEndRef.current?.scrollIntoView({
+  behavior: "smooth",
+  block: "end",
+});
   }, [messages]);
 
-  // ================= SEEN =================
+  // 🔥 SEEN LOGIC (UNCHANGED)
   useEffect(() => {
     if (!selectedUser) return;
 
@@ -77,59 +83,67 @@ function ChatContainer() {
     <>
       <ChatHeader />
 
-      <div className="flex-1 px-6 overflow-y-auto py-8">
+      {/* 🔥 MESSAGES AREA */}
+      <div className="flex-1 px-6 py-6 overflow-y-auto scroll-smooth">
         {messages.length > 0 && !isMessagesLoading ? (
-          <div className="max-w-3xl mx-auto space-y-6">
-            {messages.map((msg) => (
-              <div
-                key={msg._id}
-                className={`chat ${
-                  msg.senderId === authUser._id ? "chat-end" : "chat-start"
-                }`}
-              >
+          <div className="max-w-3xl mx-auto flex flex-col gap-3">
+            {messages.map((msg) => {
+              const isMe = msg.senderId === authUser._id;
+
+              return (
                 <div
-                  className={`chat-bubble relative ${
-                    msg.senderId === authUser._id
-                      ? "bg-cyan-800 text-white"
-                      : "bg-slate-800 text-slate-200"
-                  }`}
+                  key={msg._id}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                 >
-                  {msg.image && (
-                    <img
-                      src={msg.image}
-                      alt="Shared"
-                      className="rounded-lg h-48 object-cover"
-                    />
-                  )}
+                  <div
+                   className={`relative max-w-[75%] px-4 py-2 rounded-2xl text-[15px] shadow-sm
+${
+  isMe
+    ? " bg-cyan-700/80 text-white border border-cyan-500/50"
+    : "bg-white/5 backdrop-blur-md border border-white/10 text-slate-200"
+}`}
+                  >
+                    {/* IMAGE */}
+                    {msg.image && (
+                      <img
+                        src={msg.image}
+                        alt="Shared"
+                        className="rounded-lg mb-2 max-h-60 object-cover"
+                      />
+                    )}
 
-                  {msg.text && <p className="mt-2">{msg.text}</p>}
+                    {/* TEXT */}
+                    {msg.text && (
+                      <p className="leading-relaxed">{msg.text}</p>
+                    )}
 
-                  <div className="text-xs mt-1 opacity-75 flex items-center gap-1 justify-end">
-                    {new Date(msg.createdAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {/* TIME + STATUS */}
+                    <div className="flex items-center justify-end gap-1 mt-1 text-[10px] opacity-70">
+                      {new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
 
-                    {/* ✅ STATUS */}
-                    {msg.senderId === authUser._id && (
-  <span className="ml-1 flex items-center">
-    {msg.status === "sent" && (
-      <Tick color="#9CA3AF" />
-    )}
+                      {isMe && (
+                        <span className="ml-1 flex items-center">
+                          {msg.status === "sent" && (
+                            <Tick color="#cbd5f5" />
+                          )}
 
-    {msg.status === "delivered" && (
-      <DoubleTick color="#9CA3AF" />
-    )}
+                          {msg.status === "delivered" && (
+                            <DoubleTick color="#cbd5f5" />
+                          )}
 
-    {msg.status === "seen" && (
-      <DoubleTick color="#00FFFF" />
-    )}
-  </span>
-)}
+                          {msg.status === "seen" && (
+                            <DoubleTick color="#22d3ee" />
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div ref={messageEndRef} />
           </div>
@@ -140,6 +154,7 @@ function ChatContainer() {
         )}
       </div>
 
+      {/* 🔥 INPUT */}
       <MessageInput />
     </>
   );

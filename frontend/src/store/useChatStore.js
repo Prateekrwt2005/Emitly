@@ -96,11 +96,12 @@ export const useChatStore = create((set, get) => ({
     // 🔥 TYPING START
 socket.on("typing", ({ senderId }) => {
   set((state) => ({
-    typingUsers: [...new Set([...state.typingUsers, senderId])],
+    typingUsers: state.typingUsers.includes(senderId)
+      ? state.typingUsers
+      : [...state.typingUsers, senderId],
   }));
 });
 
-// 🔥 TYPING STOP
 socket.on("stopTyping", ({ senderId }) => {
   set((state) => ({
     typingUsers: state.typingUsers.filter((id) => id !== senderId),

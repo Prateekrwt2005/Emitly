@@ -11,20 +11,23 @@ function MessageInput() {
   const [imagePreview, setImagePreview] = useState(null);
 
   const fileInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const { sendMessage, isSoundEnabled } = useChatStore();
 
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
+
     if (isSoundEnabled) playRandomKeyStrokeSound();
 
     sendMessage({
       text: text.trim(),
       image: imagePreview,
     });
+
     setText("");
-    setImagePreview("");
+    setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -45,36 +48,35 @@ function MessageInput() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-const typingTimeoutRef = useRef(null);
+  const handleTyping = () => {
+    const socket = useAuthStore.getState().socket;
+    const { selectedUser } = useChatStore.getState();
 
-const handleTyping = () => {
-  const socket = useAuthStore.getState().socket;
-  const { selectedUser } = useChatStore.getState();
+    if (!selectedUser) return;
 
-  if (!selectedUser) return;
+    socket.emit("typing", { receiverId: selectedUser._id });
 
-  socket.emit("typing", { receiverId: selectedUser._id });
+    clearTimeout(typingTimeoutRef.current);
 
-clearTimeout(typingTimeoutRef.current);
-
-typingTimeoutRef.current = setTimeout(() => {
-    socket.emit("stopTyping", { receiverId: selectedUser._id });
-  }, 1000);
-};
+    typingTimeoutRef.current = setTimeout(() => {
+  socket.emit("stopTyping", { receiverId: selectedUser._id });
+}, 800);
+  };
 
   return (
-    <div className="p-4 border-t border-slate-700/50">
+    <div className="p-4 border-t border-white/10">
+      {/* IMAGE PREVIEW */}
       {imagePreview && (
         <div className="max-w-3xl mx-auto mb-3 flex items-center">
           <div className="relative">
             <img
               src={imagePreview}
               alt="Preview"
-              className="w-20 h-20 object-cover rounded-lg border border-slate-700"
+              className="w-20 h-20 object-cover rounded-lg border border-white/10"
             />
             <button
               onClick={removeImage}
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-200 hover:bg-slate-700"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/70 backdrop-blur flex items-center justify-center text-white hover:bg-black"
               type="button"
             >
               <XIcon className="w-4 h-4" />
@@ -83,45 +85,63 @@ typingTimeoutRef.current = setTimeout(() => {
         </div>
       )}
 
-      <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto flex space-x-4">
-        <input
-          type="text"
-          value={text}
-      onChange={(e) => {
-  setText(e.target.value);
-  isSoundEnabled && playRandomKeyStrokeSound();
-  handleTyping(); // 🔥 ADD THIS
-}}
-          className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg py-2 px-4"
-          placeholder="Type your message..."
-        />
-
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          onChange={handleImageChange}
-          className="hidden"
-        />
-
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg px-4 transition-colors ${
-            imagePreview ? "text-cyan-500" : ""
-          }`}
+      {/* INPUT BAR */}
+      <form
+        onSubmit={handleSendMessage}
+        className="max-w-3xl mx-auto"
+      >
+        <div className="flex items-center gap-2 px-4 py-3 rounded-full
+          bg-white/5 backdrop-blur-md border border-white/10
+          focus-within:border-cyan-500/50 transition-all"
         >
-          <ImageIcon className="w-5 h-5" />
-        </button>
-        <button
-          type="submit"
-          disabled={!text.trim() && !imagePreview}
-          className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-lg px-4 py-2 font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <SendIcon className="w-5 h-5" />
-        </button>
+          {/* TEXT INPUT */}
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              isSoundEnabled && playRandomKeyStrokeSound();
+              handleTyping();
+            }}
+            placeholder="Type a message..."
+            className="flex-1 bg-transparent outline-none text-ml text-slate-200 placeholder:text-slate-400"
+          />
+
+          {/* IMAGE BUTTON */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className={`p-2 rounded-full transition ${
+              imagePreview
+                ? "text-cyan-400"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <ImageIcon className="w-6 h-6" />
+          </button>
+
+          {/* SEND BUTTON */}
+          <button
+            type="submit"
+            disabled={!text.trim() && !imagePreview}
+            className="p-2 rounded-full bg-cyan-600 hover:bg-cyan-700
+            text-white transition disabled:opacity-50"
+          >
+            <SendIcon className="w-6 h-6" />
+          </button>
+
+          {/* HIDDEN FILE INPUT */}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            className="hidden"
+          />
+        </div>
       </form>
     </div>
   );
 }
+
 export default MessageInput;
