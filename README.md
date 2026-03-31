@@ -12,7 +12,7 @@ Emitly is designed as a production-ready messaging platform that supports real-t
 
 ## 📸 Preview
 
-![Chat UI](./screenshots/chat-ui.png)
+![Chat UI](./screenshots/chat-ui.png.png)
 
 ---
 
